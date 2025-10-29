@@ -1,0 +1,26 @@
+/* Update site-wide image paths */
+.product-card .card-img-top {
+    background-size: cover;
+    background-position: center;
+    height: 200px;
+}
+
+.product-card[data-product="dataguard-pro"] .card-img-top {
+    background: linear-gradient(135deg, rgba(0, 70, 200, 0.9), rgba(0, 103, 200, 0.9)),
+                url('../images/lock-shield.svg') center/50% no-repeat;
+}
+
+.product-card[data-product="cloudsync"] .card-img-top {
+    background: linear-gradient(135deg, rgba(0, 168, 200, 0.9), rgba(0, 200, 200, 0.9)),
+                url('../images/cloud-sync.svg') center/50% no-repeat;
+}
+
+.product-card[data-product="devtools"] .card-img-top {
+    background: linear-gradient(135deg, rgba(200, 80, 0, 0.9), rgba(200, 112, 0, 0.9)),
+                url('../images/code-tools.svg') center/50% no-repeat;
+}
+
+.product-card[data-product="securechat"] .card-img-top {
+    background: linear-gradient(135deg, rgba(0, 200, 80, 0.9), rgba(0, 200, 112, 0.9)),
+                url('../images/secure-chat.svg') center/50% no-repeat;
+}

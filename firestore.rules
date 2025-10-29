@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to comments
+    match /products/{productId}/comments/{commentId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to create comments
+    match /products/{productId}/comments/{commentId} {
+      allow create: if request.auth != null
+                   && request.resource.data.keys().hasAll(['name', 'comment', 'timestamp'])
+                   && request.resource.data.name is string
+                   && request.resource.data.comment is string;
+    }
+    
+    // Protect purchase records
+    match /purchases/{purchaseId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.customerId;
+      allow write: if false;  // Only allow writes through Cloud Functions
+    }
+  }
+}

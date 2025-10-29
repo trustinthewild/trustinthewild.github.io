@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Sitemap: https://trustinthewild.github.io/sitemap.xml
+
+# Prevent access to Firebase config files
+Disallow: /firebase.json
+Disallow: /.firebase/
+Disallow: /functions/
