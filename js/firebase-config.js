@@ -9,8 +9,9 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js';
-import { getFirestore, collection, addDoc, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore.js';
+// Pin Firebase SDK to a specific stable version
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

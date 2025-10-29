@@ -75,12 +75,13 @@ function loadProducts() {
     });
 }
 
-// Import Firebase and Payment functions
-import { submitContactForm } from './firebase-config.js';
-import { initializeStripe, handlePurchase, handlePurchaseSuccess } from './payment.js';
-
-// Initialize Stripe (replace with your real publishable key)
-initializeStripe('YOUR_STRIPE_PUBLISHABLE_KEY');
+// Dynamic module placeholders (use dynamic import so site still works without config)
+let submitContactForm = null;
+let initializeStripe = (k) => { console.warn('Stripe not initialized'); };
+let handlePurchase = (productId) => {
+    console.log('Purchase requested for', productId);
+    alert('Purchase flow not configured. This is a demo.');
+};
 
 // Handle contact form submission
 document.getElementById('contactForm').addEventListener('submit', async function(e) {
@@ -93,12 +94,19 @@ document.getElementById('contactForm').addEventListener('submit', async function
     };
 
     try {
-        const result = await submitContactForm(formData);
-        if (result.success) {
-            alert('Thank you for your message! We will get back to you soon.');
-            this.reset();
+        if (typeof submitContactForm === 'function') {
+            const result = await submitContactForm(formData);
+            if (result && result.success) {
+                alert('Thank you for your message! We will get back to you soon.');
+                this.reset();
+            } else {
+                alert('There was an error sending your message. Please try again.');
+            }
         } else {
-            alert('There was an error sending your message. Please try again.');
+            // Graceful fallback when Firebase is not configured
+            console.warn('submitContactForm not available; contact message:', formData);
+            alert('Contact form backend not configured. Message logged to console.');
+            this.reset();
         }
     } catch (error) {
         console.error('Error:', error);
@@ -106,8 +114,37 @@ document.getElementById('contactForm').addEventListener('submit', async function
     }
 });
 
-// Load products when the page is ready
-document.addEventListener('DOMContentLoaded', loadProducts);
+// Load products and attempt to dynamically import optional modules when the page is ready
+document.addEventListener('DOMContentLoaded', async () => {
+    // Render products immediately
+    try {
+        loadProducts();
+    } catch (e) {
+        console.error('Error rendering products:', e);
+    }
+
+    // Dynamically load payment module (optional)
+    try {
+        const payment = await import('./payment.js');
+        if (payment.initializeStripe) initializeStripe = payment.initializeStripe;
+        if (payment.handlePurchase) handlePurchase = payment.handlePurchase;
+        try {
+            initializeStripe('YOUR_STRIPE_PUBLISHABLE_KEY');
+        } catch (err) {
+            console.warn('Stripe initialization skipped or failed:', err);
+        }
+    } catch (err) {
+        console.warn('Payment module not available:', err);
+    }
+
+    // Dynamically load firebase module (optional)
+    try {
+        const fb = await import('./firebase-config.js');
+        if (fb.submitContactForm) submitContactForm = fb.submitContactForm;
+    } catch (err) {
+        console.warn('Firebase module not available:', err);
+    }
+});
 
 // Smooth scrolling for navigation links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
