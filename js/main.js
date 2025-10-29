@@ -39,23 +39,39 @@ function loadProducts() {
     const productsContainer = document.querySelector('#products .row');
     
     products.forEach(product => {
+        // compute slug from detailsLink (e.g. products/dataguard-pro.html -> dataguard-pro)
+        const slug = product.detailsLink.split('/').pop().replace('.html', '');
+
         const productCard = `
             <div class="col-md-6 col-lg-3">
-                <div class="card product-card" data-product="${product.id}">
+                <div class="card product-card" data-product="${slug}">
                     <div class="card-img-top d-flex align-items-center justify-content-center">
+                        <span class="text-white fw-bold">${product.name}</span>
+                    </div>
                     <div class="card-body">
                         <h5 class="card-title">${product.name}</h5>
                         <p class="card-text">${product.description}</p>
                         <p class="text-primary fw-bold">${product.price}</p>
                         <div class="d-grid gap-2">
                             <a href="${product.detailsLink}" class="btn btn-outline-primary">Learn More</a>
-                            <button class="btn btn-buy" onclick="initiatePurchase(${product.id})">Buy Now</button>
+                            <button type="button" class="btn btn-buy" data-product-id="${slug}">Buy Now</button>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        productsContainer.innerHTML += productCard;
+
+        productsContainer.insertAdjacentHTML('beforeend', productCard);
+    });
+
+    // Attach click handlers for buy buttons (delegated)
+    document.querySelectorAll('.btn-buy').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const pid = e.currentTarget.dataset.productId;
+            if (pid) {
+                handlePurchase(pid);
+            }
+        });
     });
 }
 
@@ -63,13 +79,8 @@ function loadProducts() {
 import { submitContactForm } from './firebase-config.js';
 import { initializeStripe, handlePurchase, handlePurchaseSuccess } from './payment.js';
 
-// Initialize Stripe
+// Initialize Stripe (replace with your real publishable key)
 initializeStripe('YOUR_STRIPE_PUBLISHABLE_KEY');
-
-// Handle purchase button click
-function initiatePayment(productId) {
-    handlePurchase(productId);
-}
 
 // Handle contact form submission
 document.getElementById('contactForm').addEventListener('submit', async function(e) {

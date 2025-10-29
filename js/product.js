@@ -41,21 +41,16 @@ document.getElementById('commentForm').addEventListener('submit', async function
     }
 });
 
-// Function to add a new comment to the page
-function addComment(name, text) {
-    const commentSection = document.querySelector('.comment');
-    const newComment = `
-        <div class="mb-3 pb-3 border-bottom">
-            <h5>${name}</h5>
-            <p class="text-muted">${new Date().toLocaleDateString()}</p>
-            <p>${text}</p>
-        </div>
-    `;
-    commentSection.innerHTML = newComment + commentSection.innerHTML;
-}
+// Initialize page: load comments and wire buy button
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load existing comments
+    await loadComments();
 
-// Function to handle purchase
-function initiatePurchase() {
-    // Implement your payment platform integration here
-    console.log('Purchase initiated');
-}
+    // Wire buy button on product detail page
+    const buyBtn = document.querySelector('.btn-buy');
+    if (buyBtn) {
+        buyBtn.addEventListener('click', () => {
+            handlePurchase(productId);
+        });
+    }
+});
