@@ -1,5 +1,6 @@
 import { addComment, getComments } from './firebase-config.js';
 import { handlePurchase } from './payment.js';
+import { getCurrentUser, requireAuth } from './auth.js';
 
 // Get product ID from URL
 const productId = window.location.pathname.split('/').pop().replace('.html', '');
@@ -63,29 +64,51 @@ async function loadComments() {
     }
 }
 
+// Handle authentication state changes
+function updateAuthUI() {
+    const user = getCurrentUser();
+    const commentForm = document.getElementById('commentForm');
+    const buyBtn = document.querySelector('.btn-buy');
+    const authMessage = document.querySelector('.auth-message');
+
+    if (user) {
+        if (commentForm) commentForm.style.display = 'block';
+        if (buyBtn) buyBtn.disabled = false;
+        if (authMessage) authMessage.style.display = 'none';
+    } else {
+        if (commentForm) commentForm.style.display = 'none';
+        if (buyBtn) buyBtn.disabled = true;
+        if (authMessage) authMessage.innerHTML = '<div class="alert alert-info">Please <a href="#" data-bs-toggle="modal" data-bs-target="#authModal">sign in</a> to leave comments or make purchases.</div>';
+    }
+}
+
 // Initialize page: wire handlers and load comments
 document.addEventListener('DOMContentLoaded', async () => {
+    // Listen for auth state changes
+    window.addEventListener('authStateChanged', updateAuthUI);
+
     // Attach comment form handler if present
     const commentForm = document.getElementById('commentForm');
     if (commentForm) {
         commentForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            const nameEl = this.querySelector('input[type="text"]');
-            const textEl = this.querySelector('textarea');
-            const name = nameEl ? nameEl.value.trim() : '';
-            const comment = textEl ? textEl.value.trim() : '';
-
-            if (!name || !comment) {
-                alert('Please enter your name and comment.');
-                return;
-            }
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
-
             try {
-                const result = await addComment(productId, name, comment);
+                // Ensure user is authenticated
+                const user = requireAuth();
+                
+                const textEl = this.querySelector('textarea');
+                const comment = textEl ? textEl.value.trim() : '';
+
+                if (!comment) {
+                    alert('Please enter your comment.');
+                    return;
+                }
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.disabled = true;
+
+                const result = await addComment(productId, user.email, comment);
                 if (result && result.success) {
                     await loadComments();
                     this.reset();
@@ -94,8 +117,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } catch (error) {
                 console.error('Error posting comment:', error);
-                alert('There was an error posting your comment. Please try again.');
+                if (error.message === 'Authentication required') {
+                    alert('Please sign in to post comments.');
+                } else {
+                    alert('There was an error posting your comment. Please try again.');
+                }
             } finally {
+                const submitBtn = this.querySelector('button[type="submit"]');
                 if (submitBtn) submitBtn.disabled = false;
             }
         });
@@ -107,12 +135,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Wire buy button on product detail page
     const buyBtn = document.querySelector('.btn-buy');
     if (buyBtn) {
-        buyBtn.addEventListener('click', () => {
+        buyBtn.addEventListener('click', async () => {
             try {
-                handlePurchase(productId);
-            } catch (err) {
-                console.error('Error triggering purchase handler', err);
+                // Ensure user is authenticated
+                const user = requireAuth();
+                await handlePurchase(productId, user.uid);
+            } catch (error) {
+                console.error('Error triggering purchase handler', error);
+                if (error.message === 'Authentication required') {
+                    alert('Please sign in to make purchases.');
+                } else {
+                    alert('There was an error processing your purchase. Please try again.');
+                }
             }
         });
     }
+
+    // Initial UI update
+    updateAuthUI();
 });
