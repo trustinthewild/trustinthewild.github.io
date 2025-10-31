@@ -4,7 +4,7 @@ const products = [
         id: 1,
         name: "DataGuard Pro",
         description: "Advanced data backup and encryption solution for businesses and individuals",
-        image: "images/dataguard-pro.jpg",
+        image: "images/lock-shield.svg",
         price: "$49.99",
         detailsLink: "products/dataguard-pro.html"
     },
@@ -12,7 +12,7 @@ const products = [
         id: 2,
         name: "CloudSync Manager",
         description: "Seamless cloud storage synchronization and management tool",
-        image: "images/cloudsync.jpg",
+        image: "images/cloud-sync.svg",
         price: "$39.99",
         detailsLink: "products/cloudsync.html"
     },
@@ -20,7 +20,7 @@ const products = [
         id: 3,
         name: "DevTools Suite",
         description: "Complete development toolkit for modern web applications",
-        image: "images/devtools.jpg",
+        image: "images/code-tools.svg",
         price: "$79.99",
         detailsLink: "products/devtools.html"
     },
@@ -28,7 +28,7 @@ const products = [
         id: 4,
         name: "SecureChat Enterprise",
         description: "End-to-end encrypted communication platform for businesses",
-        image: "images/securechat.jpg",
+        image: "images/secure-chat.svg",
         price: "$99.99",
         detailsLink: "products/securechat.html"
     }
@@ -44,7 +44,7 @@ function loadProducts() {
 
         const productCard = `
             <div class="col-md-6 col-lg-3">
-                <div class="card product-card" data-product="${slug}">
+                <div class="card product-card shadow bg-white rounded" data-product="${slug}" style="border-radius: 1rem;">
                     <div class="card-img-top d-flex align-items-center justify-content-center">
                         <span class="text-white fw-bold">${product.name}</span>
                     </div>

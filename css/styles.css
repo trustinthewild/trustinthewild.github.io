@@ -1,3 +1,18 @@
+body {
+    background-color: #f6f8fa;
+}
+
+.product-card {
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 1rem;
+    transition: box-shadow 0.2s;
+}
+
+.product-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
 /* Global Styles */
 :root {
     --primary-color: #007bff;
