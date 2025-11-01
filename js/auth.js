@@ -303,11 +303,27 @@ function setupAuthForms() {
             errorDiv.classList.add('d-none');
             successDiv.textContent = 'Password reset link sent! Please check your email.';
             successDiv.classList.remove('d-none');
+            
             setTimeout(() => {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
-                modal?.hide();
+                const modalElement = document.getElementById('forgotPasswordModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // If no instance exists, create one and hide it
+                    const newModal = new bootstrap.Modal(modalElement);
+                    newModal.hide();
+                }
+                
                 forgotPasswordForm.reset();
                 successDiv.classList.add('d-none');
+                
+                // Clean up backdrop if it's still there
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
             }, 3000);
         } catch (error) {
             successDiv.classList.add('d-none');
@@ -323,6 +339,24 @@ function setupAuthForms() {
         signInModal?.hide();
         const forgotPasswordModal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
         forgotPasswordModal.show();
+    });
+
+    // Clean up modal backdrop when forgot password modal is closed
+    const forgotPasswordModalElement = document.getElementById('forgotPasswordModal');
+    forgotPasswordModalElement?.addEventListener('hidden.bs.modal', () => {
+        // Force cleanup of any remaining backdrops
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+        
+        // Reset form and messages
+        const form = document.getElementById('forgotPasswordForm');
+        const successDiv = document.getElementById('forgotPasswordSuccess');
+        const errorDiv = document.getElementById('forgotPasswordError');
+        form?.reset();
+        successDiv?.classList.add('d-none');
+        errorDiv?.classList.add('d-none');
     });
 
     // Sign Out Button
