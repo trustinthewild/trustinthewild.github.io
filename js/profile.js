@@ -11,6 +11,28 @@ import { getCurrentUser, requireAuth, showNotification } from './auth.js';
 const auth = getAuth();
 const db = getDatabase();
 
+// Convert Firebase error codes to friendly messages
+function getFriendlyErrorMessage(error) {
+    const errorCode = error.code || '';
+    const errorMessage = error.message || '';
+    
+    // Common Firebase Auth errors
+    const errorMessages = {
+        'auth/invalid-credential': 'The current password you entered is incorrect. Please try again.',
+        'auth/wrong-password': 'The current password you entered is incorrect. Please try again.',
+        'auth/weak-password': 'The new password is too weak. Please use at least 6 characters.',
+        'auth/requires-recent-login': 'For security reasons, please sign out and sign in again before changing your password.',
+        'auth/user-not-found': 'User account not found.',
+        'auth/network-request-failed': 'Network error. Please check your connection and try again.',
+        'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+        'auth/invalid-email': 'Invalid email address format.',
+        'auth/email-already-in-use': 'This email is already in use by another account.'
+    };
+    
+    // Return friendly message if available, otherwise return cleaned error message
+    return errorMessages[errorCode] || errorMessage.replace('Firebase: ', '').replace(/\(auth\/[^)]+\)\.?/g, '').trim();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Listen for sign-out events and redirect immediately
     window.addEventListener('authStateChanged', (e) => {
@@ -190,7 +212,8 @@ function setupProfileForm() {
             showNotification('Success', 'Profile updated successfully!', 'success');
         } catch (error) {
             console.error('Error updating profile:', error);
-            showNotification('Error', 'Error updating profile: ' + error.message, 'error');
+            const friendlyMessage = getFriendlyErrorMessage(error);
+            showNotification('Error Updating Profile', friendlyMessage, 'error');
         }
     });
 }
@@ -225,7 +248,8 @@ function setupPasswordForm() {
             form.reset();
         } catch (error) {
             console.error('Error changing password:', error);
-            showNotification('Error', 'Error changing password: ' + error.message, 'error');
+            const friendlyMessage = getFriendlyErrorMessage(error);
+            showNotification('Error Changing Password', friendlyMessage, 'error');
         }
     });
 }
