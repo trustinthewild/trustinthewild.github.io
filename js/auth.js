@@ -53,7 +53,8 @@ function updateAuthUI(user) {
         const userButtons = document.getElementById('auth-user-buttons');
         const userDisplayName = document.getElementById('userDisplayName');
 
-        if (user) {
+        // Only show user buttons if signed in AND email is verified
+        if (user && user.emailVerified) {
             guestButtons?.classList.add('d-none');
             userButtons?.classList.remove('d-none');
             if (userDisplayName) {
