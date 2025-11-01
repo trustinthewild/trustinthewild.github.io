@@ -1,6 +1,6 @@
 import { addComment, getComments } from './firebase-config.js';
 import { handlePurchase } from './payment.js';
-import { getCurrentUser, canPerformAction, saveComment, savePurchase, handleVerificationPrompt } from './auth.js';
+import { getCurrentUser, canPerformAction, saveComment, savePurchase, handleVerificationPrompt, showNotification } from './auth.js';
 
 // Get product ID from URL
 const productId = window.location.pathname.split('/').pop().replace('.html', '');
@@ -103,7 +103,7 @@ async function updateAuthUI() {
             } else {
                 buyBtn.disabled = true;
                 if (!purchaseCheck.requiresVerification) {
-                    alert(purchaseCheck.reason);
+                    showNotification('Purchase Restricted', purchaseCheck.reason, 'warning');
                 }
             }
         }
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const comment = textEl ? textEl.value.trim() : '';
 
             if (!comment) {
-                alert('Please enter your comment.');
+                showNotification('Comment Required', 'Please enter your comment.', 'warning');
                 return;
             }
 
@@ -143,10 +143,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await saveComment(productId, comment);
                 await loadComments();
                 this.reset();
-                alert('Comment posted successfully!');
+                showNotification('Success', 'Comment posted successfully!', 'success');
             } catch (error) {
                 console.error('Error posting comment:', error);
-                alert(error.message || 'Error posting comment. Please try again.');
+                showNotification('Error', error.message || 'Error posting comment. Please try again.', 'error');
             } finally {
                 if (submitBtn) submitBtn.disabled = false;
             }
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (check.requiresVerification) {
                         await handleVerificationPrompt();
                     } else {
-                        alert(check.reason);
+                        showNotification('Purchase Restricted', check.reason, 'warning');
                     }
                     return;
                 }
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             } catch (error) {
                 console.error('Error processing purchase:', error);
-                alert(error.message || 'Error processing purchase. Please try again.');
+                showNotification('Purchase Error', error.message || 'Error processing purchase. Please try again.', 'error');
             }
         });
     }

@@ -1,4 +1,6 @@
 // Initialize Stripe
+import { showNotification } from './auth.js';
+
 let stripe;
 
 // Product prices mapping
@@ -63,7 +65,7 @@ export async function handlePurchase(productId) {
         }
     } catch (error) {
         console.error('Purchase error:', error);
-        alert('There was an error processing your purchase. Please try again.');
+        showNotification('Purchase Error', 'There was an error processing your purchase. Please try again.', 'error');
     }
 }
 
@@ -72,7 +74,7 @@ export function handlePurchaseSuccess() {
     // Show success message
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success')) {
-        alert('Thank you for your purchase! You will receive an email with further instructions.');
+        showNotification('Purchase Complete', 'Thank you for your purchase! You will receive an email with further instructions.', 'success');
     }
 }
 

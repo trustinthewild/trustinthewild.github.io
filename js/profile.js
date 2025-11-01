@@ -6,7 +6,7 @@ import {
     sendEmailVerification
 } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
 import { getDatabase, ref, get, update } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
-import { getCurrentUser, requireAuth } from './auth.js';
+import { getCurrentUser, requireAuth, showNotification } from './auth.js';
 
 const auth = getAuth();
 const db = getDatabase();
@@ -58,9 +58,9 @@ async function loadUserProfile(user) {
             document.getElementById('resendVerificationBtn')?.addEventListener('click', async () => {
                 try {
                     await sendEmailVerification(user);
-                    alert('Verification email sent! Please check your inbox.');
+                    showNotification('Verification Email Sent', 'Please check your inbox for the verification link.', 'success');
                 } catch (error) {
-                    alert('Error sending verification email: ' + error.message);
+                    showNotification('Error', 'Error sending verification email: ' + error.message, 'error');
                 }
             });
         }
@@ -161,10 +161,10 @@ function setupProfileForm() {
             await update(ref(db, `users/${user.uid}`), {
                 username
             });
-            alert('Profile updated successfully!');
+            showNotification('Success', 'Profile updated successfully!', 'success');
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Error updating profile: ' + error.message);
+            showNotification('Error', 'Error updating profile: ' + error.message, 'error');
         }
     });
 }
@@ -183,7 +183,7 @@ function setupPasswordForm() {
         const confirmPassword = document.getElementById('confirmNewPassword').value;
 
         if (newPassword !== confirmPassword) {
-            alert('New passwords do not match!');
+            showNotification('Password Mismatch', 'New passwords do not match!', 'warning');
             return;
         }
 
@@ -195,11 +195,11 @@ function setupPasswordForm() {
             // Change password
             await updatePassword(user, newPassword);
             
-            alert('Password updated successfully!');
+            showNotification('Success', 'Password updated successfully!', 'success');
             form.reset();
         } catch (error) {
             console.error('Error changing password:', error);
-            alert('Error changing password: ' + error.message);
+            showNotification('Error', 'Error changing password: ' + error.message, 'error');
         }
     });
 }

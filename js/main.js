@@ -1,3 +1,5 @@
+import { showNotification } from './auth.js';
+
 // Sample product data - Replace with your actual products
 const products = [
     {
@@ -80,7 +82,7 @@ let submitContactForm = null;
 let initializeStripe = (k) => { console.warn('Stripe not initialized'); };
 let handlePurchase = (productId) => {
     console.log('Purchase requested for', productId);
-    alert('Purchase flow not configured. This is a demo.');
+    showNotification('Demo Mode', 'Purchase flow not configured. This is a demo.', 'info');
 };
 
 // Handle contact form submission
@@ -97,20 +99,20 @@ document.getElementById('contactForm').addEventListener('submit', async function
         if (typeof submitContactForm === 'function') {
             const result = await submitContactForm(formData);
             if (result && result.success) {
-                alert('Thank you for your message! We will get back to you soon.');
+                showNotification('Message Sent', 'Thank you for your message! We will get back to you soon.', 'success');
                 this.reset();
             } else {
-                alert('There was an error sending your message. Please try again.');
+                showNotification('Error', 'There was an error sending your message. Please try again.', 'error');
             }
         } else {
             // Graceful fallback when Firebase is not configured
             console.warn('submitContactForm not available; contact message:', formData);
-            alert('Contact form backend not configured. Message logged to console.');
+            showNotification('Demo Mode', 'Contact form backend not configured. Message logged to console.', 'info');
             this.reset();
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('There was an error sending your message. Please try again.');
+        showNotification('Error', 'There was an error sending your message. Please try again.', 'error');
     }
 });
 

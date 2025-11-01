@@ -16,6 +16,41 @@ const db = getDatabase(app);
 // Current user state
 let currentUser = null;
 
+// Show notification toast
+export function showNotification(title, message, type = 'info') {
+    const toastElement = document.getElementById('notificationToast');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastHeader = toastElement?.querySelector('.toast-header');
+    
+    if (!toastElement || !toastTitle || !toastMessage || !toastHeader) return;
+    
+    // Set content
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    // Remove previous type classes
+    toastHeader.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info', 'text-white');
+    
+    // Add type-specific styling
+    if (type === 'success') {
+        toastHeader.classList.add('bg-success', 'text-white');
+    } else if (type === 'error') {
+        toastHeader.classList.add('bg-danger', 'text-white');
+    } else if (type === 'warning') {
+        toastHeader.classList.add('bg-warning', 'text-white');
+    } else {
+        toastHeader.classList.add('bg-info', 'text-white');
+    }
+    
+    // Show toast
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+}
+
 // Initialize authentication state
 export function initAuth() {
     // Update UI based on authentication state
@@ -169,7 +204,12 @@ function setupAuthForms() {
             signUpForm.reset();
             errorDiv.classList.add('d-none');
 
-            alert('Please check your email to verify your account. You will need to verify your email before you can sign in.');
+            // Show success notification
+            showNotification(
+                'Account Created!',
+                'Please check your email to verify your account. You will need to verify your email before you can sign in.',
+                'success'
+            );
         } catch (error) {
             errorDiv.textContent = error.message;
             errorDiv.classList.remove('d-none');
@@ -332,16 +372,30 @@ export async function handleVerificationPrompt() {
     const now = Date.now();
     
     if (!lastPromptTime || (now - parseInt(lastPromptTime)) > 300000) { // 5 minutes
-        if (confirm('This action requires email verification. Would you like to send a verification email?')) {
-            try {
-                await sendEmailVerification(currentUser);
-                localStorage.setItem('lastVerificationPrompt', now.toString());
-                alert('Verification email sent! Please check your inbox.');
-                return true;
-            } catch (error) {
-                console.error('Error sending verification email:', error);
-                alert('Error sending verification email. Please try again later.');
-            }
+        // Show a notification asking if they want to send verification email
+        showNotification(
+            'Email Verification Required',
+            'This action requires email verification. Click "Resend Verification" in your profile to verify your email.',
+            'warning'
+        );
+        
+        // Auto-send verification email (removing the confirm dialog)
+        try {
+            await sendEmailVerification(currentUser);
+            localStorage.setItem('lastVerificationPrompt', now.toString());
+            showNotification(
+                'Verification Email Sent',
+                'Please check your inbox for the verification link.',
+                'success'
+            );
+            return true;
+        } catch (error) {
+            console.error('Error sending verification email:', error);
+            showNotification(
+                'Error',
+                'Error sending verification email. Please try again later.',
+                'error'
+            );
         }
     }
     return false;
