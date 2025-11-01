@@ -8,13 +8,55 @@ import {
     sendPasswordResetEmail,
     onAuthStateChanged 
 } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
-import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
+import { getDatabase, ref, set, get, push, update } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
 
 const auth = getAuth(app);
 const db = getDatabase(app);
 
 // Current user state
 let currentUser = null;
+let lastAuthState = null; // Track last auth state to prevent unnecessary updates
+
+// Initialize UI immediately from cached state to prevent flicker
+function initializeUIFromCache() {
+    const cachedAuthState = localStorage.getItem('authState');
+    if (cachedAuthState) {
+        try {
+            const authState = JSON.parse(cachedAuthState);
+            // Apply cached state immediately (synchronously) before Firebase loads
+            applyAuthUIState(authState.isAuthenticated, authState.username);
+        } catch (e) {
+            console.error('Error reading cached auth state:', e);
+        }
+    }
+}
+
+// Apply auth UI state (separated for reuse)
+function applyAuthUIState(isAuthenticated, username = null) {
+    const updateUI = () => {
+        const guestButtons = document.getElementById('auth-guest-buttons');
+        const userButtons = document.getElementById('auth-user-buttons');
+        const userDisplayName = document.getElementById('userDisplayName');
+
+        if (isAuthenticated) {
+            guestButtons?.classList.add('d-none');
+            userButtons?.classList.remove('d-none');
+            if (userDisplayName && username) {
+                userDisplayName.textContent = username;
+            }
+        } else {
+            guestButtons?.classList.remove('d-none');
+            userButtons?.classList.add('d-none');
+        }
+    };
+
+    // If DOM is ready, update immediately; otherwise wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateUI, { once: true });
+    } else {
+        updateUI();
+    }
+}
 
 // Show notification toast
 export function showNotification(title, message, type = 'info') {
@@ -53,23 +95,25 @@ export function showNotification(title, message, type = 'info') {
 
 // Initialize authentication state
 export function initAuth() {
+    // Note: initializeUIFromCache is called earlier (before DOMContentLoaded)
+    // so we don't call it here to avoid double initialization
+    
     // Update UI based on authentication state
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
-            if (user) {
-                // Check if email was just verified
-                if (user.emailVerified) {
-                    const profile = await getUserProfile(user.uid);
-                    if (profile && !profile.emailVerified) {
-                        // Update the profile to mark email as verified
-                        await saveUserProfile(user.uid, {
-                            ...profile,
-                            emailVerified: true
-                        });
-                    }
+        if (user) {
+            // Check if email was just verified
+            if (user.emailVerified) {
+                const profile = await getUserProfile(user.uid);
+                if (profile && !profile.emailVerified) {
+                    // Update the profile to mark email as verified (use update, not set)
+                    await update(ref(db, `users/${user.uid}`), {
+                        emailVerified: true
+                    });
                 }
             }
-            updateAuthUI(user);
+        }
+        updateAuthUI(user);
         
         // Dispatch event for other parts of the app
         window.dispatchEvent(new CustomEvent('authStateChanged', { 
@@ -88,19 +132,48 @@ function updateAuthUI(user) {
         const userButtons = document.getElementById('auth-user-buttons');
         const userDisplayName = document.getElementById('userDisplayName');
 
+        const isAuthenticated = user && user.emailVerified;
+        
+        // Create a simple state identifier to detect changes
+        const currentAuthState = isAuthenticated ? `auth-${user.uid}` : 'guest';
+        
+        // Only update UI if auth state actually changed
+        if (lastAuthState === currentAuthState) {
+            return; // No change, skip update to prevent flicker
+        }
+        
+        lastAuthState = currentAuthState;
+
         // Only show user buttons if signed in AND email is verified
-        if (user && user.emailVerified) {
-            guestButtons?.classList.add('d-none');
-            userButtons?.classList.remove('d-none');
-            if (userDisplayName) {
-                // Try to get custom username from database
-                getUserProfile(user.uid).then(profile => {
-                    userDisplayName.textContent = profile?.username || user.email;
-                }).catch(err => console.error('Error loading profile for UI:', err));
-            }
+        if (isAuthenticated) {
+            // Try to get custom username from database
+            getUserProfile(user.uid).then(profile => {
+                const username = profile?.username || user.email;
+                applyAuthUIState(true, username);
+                
+                // Cache the auth state
+                localStorage.setItem('authState', JSON.stringify({
+                    isAuthenticated: true,
+                    username: username
+                }));
+            }).catch(err => {
+                console.error('Error loading profile for UI:', err);
+                applyAuthUIState(true, user.email);
+                
+                // Cache with email fallback
+                localStorage.setItem('authState', JSON.stringify({
+                    isAuthenticated: true,
+                    username: user.email
+                }));
+            });
         } else {
-            guestButtons?.classList.remove('d-none');
-            userButtons?.classList.add('d-none');
+            applyAuthUIState(false);
+            
+            // Cache guest state
+            localStorage.setItem('authState', JSON.stringify({
+                isAuthenticated: false,
+                username: null
+            }));
         }
     } catch (error) {
         console.error('Error updating UI:', error);
@@ -121,7 +194,8 @@ async function getUserProfile(uid) {
 // Save user profile to database
 async function saveUserProfile(uid, profile) {
     try {
-        await set(ref(db, `users/${uid}`), profile);
+        // Use update instead of set to avoid overwriting nested data
+        await update(ref(db, `users/${uid}`), profile);
     } catch (error) {
         console.error('Error saving user profile:', error);
         throw error;
@@ -182,13 +256,7 @@ function setupAuthForms() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // Send verification email
-            await sendEmailVerification(user);
-            
-            // Sign out immediately after sending verification
-            await signOut(auth);
-            
-            // Save initial user profile
+            // Save initial user profile BEFORE sending verification
             await saveUserProfile(user.uid, {
                 username,
                 email,
@@ -197,6 +265,12 @@ function setupAuthForms() {
                 comments: {},
                 purchases: {}
             });
+
+            // Send verification email
+            await sendEmailVerification(user);
+            
+            // Sign out immediately after sending verification
+            await signOut(auth);
             
             // Close modal and show message
             const modal = bootstrap.Modal.getInstance(document.getElementById('signUpModal'));
@@ -303,25 +377,30 @@ export async function canPerformAction(actionType = 'any') {
 
 // Save comment to Firebase
 export async function saveComment(productId, comment) {
-    const check = canPerformAction('comment');
+    const check = await canPerformAction('comment'); // Added await
     if (!check.allowed) {
         throw new Error(check.reason);
     }
 
+    const profile = await getUserProfile(currentUser.uid);
+    const username = profile?.username || currentUser.email || 'Anonymous';
+
     const commentData = {
         userId: currentUser.uid,
         productId,
-        text: comment,
+        name: username,
+        comment: comment,
         timestamp: new Date().toISOString()
     };
+
+    // Use consistent path: products/${productId}/comments (same as firebase-config.js)
+    const commentsRef = ref(db, `products/${productId}/comments`);
+    const commentRef = push(commentsRef);
+    await set(commentRef, commentData);
 
     // Get product info for the comment
     const productSnapshot = await get(ref(db, `products/${productId}`));
     const productName = productSnapshot.val()?.name || 'Unknown Product';
-
-    // Save to comments collection
-    const commentRef = push(ref(db, `comments/${productId}`));
-    await set(commentRef, commentData);
 
     // Save to user's comments
     await set(ref(db, `users/${currentUser.uid}/comments/${commentRef.key}`), {
@@ -334,7 +413,7 @@ export async function saveComment(productId, comment) {
 
 // Save purchase to Firebase
 export async function savePurchase(productId, amount, details) {
-    const check = canPerformAction('purchase');
+    const check = await canPerformAction('purchase'); // Added await
     if (!check.allowed) {
         throw new Error(check.reason);
     }
@@ -404,5 +483,17 @@ export async function handleVerificationPrompt() {
 // Make the existing getUserProfile function available externally
 export { getUserProfile };
 
-// Initialize on page load
+// Initialize cache BEFORE DOMContentLoaded to prevent flicker
+if (document.readyState === 'loading') {
+    document.addEventListener('readystatechange', () => {
+        if (document.readyState === 'interactive') {
+            initializeUIFromCache();
+        }
+    });
+} else {
+    // If script runs after DOM is ready
+    initializeUIFromCache();
+}
+
+// Initialize auth after DOM is fully ready
 document.addEventListener('DOMContentLoaded', initAuth);
