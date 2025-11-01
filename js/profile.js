@@ -13,11 +13,28 @@ const db = getDatabase();
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Ensure user is authenticated
-        const user = requireAuth();
+        // Wait for authentication state to be determined
+        let user = getCurrentUser();
+        
         if (!user) {
-            window.location.href = '/';
-            return;
+            // Wait for auth state change event
+            user = await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error('Authentication timeout'));
+                }, 5000); // 5 second timeout
+                
+                const onAuth = (e) => {
+                    clearTimeout(timeout);
+                    window.removeEventListener('authStateChanged', onAuth);
+                    if (!e.detail.user) {
+                        reject(new Error('Not authenticated'));
+                    } else {
+                        resolve(e.detail.user);
+                    }
+                };
+                
+                window.addEventListener('authStateChanged', onAuth);
+            });
         }
 
         // Load user profile
@@ -35,7 +52,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (error) {
         console.error('Error initializing profile:', error);
-        if (error.message === 'Authentication required') {
+        // Redirect to home if authentication failed
+        if (error.message.includes('Authentication') || error.message.includes('Not authenticated')) {
             window.location.href = '/';
         }
     }

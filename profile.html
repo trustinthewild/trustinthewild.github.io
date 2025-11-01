@@ -16,7 +16,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Home</a>
                     </li>
@@ -29,14 +29,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/#contact">Contact</a>
                     </li>
-                </ul>
-                <!-- Auth buttons -->
-                <ul class="navbar-nav auth-buttons">
-                    <li class="nav-item d-none" id="auth-guest-buttons">
+                    <!-- Auth buttons -->
+                    <li class="nav-item ms-lg-3" id="auth-guest-buttons">
                         <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#signInModal">Sign In</button>
                         <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#signUpModal">Sign Up</button>
                     </li>
-                    <li class="nav-item d-none" id="auth-user-buttons">
+                    <li class="nav-item ms-lg-3 d-none" id="auth-user-buttons">
                         <button class="btn btn-outline-light me-2" id="userProfileBtn">
                             <span id="userDisplayName">Username</span>
                         </button>

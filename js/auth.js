@@ -337,8 +337,17 @@ function setupAuthForms() {
 
     // User Profile Button
     const userProfileBtn = document.getElementById('userProfileBtn');
-    userProfileBtn?.addEventListener('click', () => {
-        window.location.href = '/profile.html';
+    userProfileBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Get the current path and navigate to profile.html from root
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/products/')) {
+            window.location.href = '../profile.html';
+        } else {
+            window.location.href = 'profile.html';
+        }
     });
 }
 
