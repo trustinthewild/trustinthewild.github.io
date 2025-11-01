@@ -1,7 +1,3 @@
-// Firebase imports
-import { getDatabase, ref, push, set } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
-import { requireAuth } from './auth.js';
-
 // Initialize Stripe
 let stripe;
 
@@ -34,41 +30,13 @@ export function initializeStripe(publishableKey) {
     stripe = Stripe(publishableKey);
 }
 
-// Store purchase in Firebase
-async function recordPurchase(userId, productId, priceId, amount) {
-    const db = getDatabase();
-    const purchaseRef = ref(db, `users/${userId}/purchases`);
-    const newPurchaseRef = push(purchaseRef);
-    
-    await set(newPurchaseRef, {
-        productId,
-        priceId,
-        amount,
-        timestamp: new Date().toISOString(),
-        status: 'initiated'
-    });
-    
-    return newPurchaseRef.key;
-}
-
 // Handle purchase button click
 export async function handlePurchase(productId) {
     try {
-        // Check authentication
-        const user = requireAuth();
-        
         const product = PRODUCT_PRICES[productId];
         if (!product) {
             throw new Error('Product not found');
         }
-
-        // Record purchase attempt
-        const purchaseId = await recordPurchase(
-            user.uid,
-            productId,
-            product.priceId,
-            product.amount
-        );
 
         // Create a Stripe Checkout Session
         const response = await fetch('/create-checkout-session', {
@@ -79,9 +47,7 @@ export async function handlePurchase(productId) {
             body: JSON.stringify({
                 priceId: product.priceId,
                 productId: productId,
-                type: product.type,
-                userId: user.uid,
-                purchaseId: purchaseId
+                type: product.type
             }),
         });
 
@@ -97,11 +63,7 @@ export async function handlePurchase(productId) {
         }
     } catch (error) {
         console.error('Purchase error:', error);
-        if (error.message === 'Authentication required') {
-            alert('Please sign in to make a purchase.');
-        } else {
-            alert('There was an error processing your purchase. Please try again.');
-        }
+        alert('There was an error processing your purchase. Please try again.');
     }
 }
 

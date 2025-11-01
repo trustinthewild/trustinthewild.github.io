@@ -16,34 +16,17 @@ const firebaseConfig = {
 // Pin Firebase SDK to a specific stable version
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
 import { getDatabase, ref, push, set, get, query, orderByChild } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
 
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const auth = getAuth(app);
-
-// Track authentication state
-let currentUser = null;
-onAuthStateChanged(auth, (user) => {
-    currentUser = user;
-    // Dispatch an event when auth state changes
-    window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { user } }));
-});
 
 // Add comment to Realtime Database
-export async function addComment(productId, email, comment) {
+export async function addComment(productId, name, comment) {
     try {
-        // Ensure user is authenticated
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error('Authentication required');
-        }
-
-        const commentsRef = ref(db, `products/${productId}/comments`);
+    const commentsRef = ref(db, `products/${productId}/comments`);
         const newCommentRef = push(commentsRef);
         await set(newCommentRef, {
-            userId: user.uid,
-            email: email,
+            name: name,
             comment: comment,
             timestamp: new Date().toISOString()
         });
