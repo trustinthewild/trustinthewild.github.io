@@ -101,6 +101,50 @@ body {
     border-bottom: none;
 }
 
+/* Auth Buttons - Fixed width to prevent layout shift */
+#auth-guest-buttons,
+#auth-user-buttons {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Make username button same width as Sign In button */
+#userProfileBtn {
+    min-width: 100px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    justify-content: center;
+}
+
+/* Make Sign Out button same width as Sign Up button */
+#signOutBtn {
+    min-width: 90px;
+}
+
+/* Ensure consistent button widths */
+#auth-guest-buttons button:first-child,
+#userProfileBtn {
+    width: 120px; /* Fixed width for first button (Sign In / Username) */
+}
+
+#auth-guest-buttons button:last-child,
+#signOutBtn {
+    width: 100px; /* Fixed width for second button (Sign Up / Sign Out) */
+}
+
+/* Username display - truncate long names */
+#userDisplayName {
+    display: inline-block;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .hero-section {
@@ -110,11 +154,24 @@ body {
     #auth-guest-buttons,
     #auth-user-buttons {
         margin-top: 1rem;
+        width: 100%;
+        justify-content: center;
     }
 
     #auth-guest-buttons button,
     #auth-user-buttons button {
-        display: inline-block;
         margin-bottom: 0.5rem;
+        flex: 0 0 auto; /* Prevent flex stretching */
+    }
+    
+    /* Maintain fixed widths on mobile */
+    #auth-guest-buttons button:first-child,
+    #userProfileBtn {
+        width: 120px;
+    }
+
+    #auth-guest-buttons button:last-child,
+    #signOutBtn {
+        width: 100px;
     }
 }
