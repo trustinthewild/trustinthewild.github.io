@@ -1,5 +1,6 @@
 import { addComment, getComments } from './firebase-config.js';
 import { handlePurchase } from './payment.js';
+import { getCurrentUser, canPerformAction, saveComment, savePurchase, handleVerificationPrompt } from './auth.js';
 
 // Get product ID from URL
 const productId = window.location.pathname.split('/').pop().replace('.html', '');
@@ -63,21 +64,75 @@ async function loadComments() {
     }
 }
 
-// Initialize page: wire handlers and load comments
+// Handle authentication state changes
+async function updateAuthUI() {
+    const user = getCurrentUser();
+    const commentForm = document.getElementById('commentForm');
+    const buyBtn = document.querySelector('.btn-buy');
+    const authMessage = document.querySelector('.auth-message');
+
+    const [commentCheck, purchaseCheck] = await Promise.all([
+        canPerformAction('comment'),
+        canPerformAction('purchase')
+    ]);
+
+    if (user) {
+        // Show comment form if user can comment
+        if (commentForm) {
+            commentForm.style.display = 'block';
+            if (commentCheck.allowed) {
+                commentForm.querySelector('button[type="submit"]').disabled = false;
+            } else {
+                commentForm.querySelector('button[type="submit"]').disabled = true;
+                if (authMessage && commentCheck.requiresVerification) {
+                    authMessage.innerHTML = `<div class="alert alert-warning">${commentCheck.reason} <a href="#" class="verify-email-link">Send verification email</a></div>`;
+                    authMessage.querySelector('.verify-email-link')?.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await handleVerificationPrompt();
+                    });
+                } else if (authMessage) {
+                    authMessage.innerHTML = `<div class="alert alert-warning">${commentCheck.reason}</div>`;
+                }
+            }
+        }
+
+        // Enable buy button if user can make purchases
+        if (buyBtn) {
+            if (purchaseCheck.allowed) {
+                buyBtn.disabled = false;
+            } else {
+                buyBtn.disabled = true;
+                if (!purchaseCheck.requiresVerification) {
+                    alert(purchaseCheck.reason);
+                }
+            }
+        }
+    } else {
+        // Hide comment form and disable buy button for non-authenticated users
+        if (commentForm) commentForm.style.display = 'none';
+        if (buyBtn) buyBtn.disabled = true;
+        if (authMessage) {
+            authMessage.innerHTML = '<div class="alert alert-info">Please <a href="#" data-bs-toggle="modal" data-bs-target="#signInModal">sign in</a> to leave comments or make purchases.</div>';
+        }
+    }
+}
+
+// Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
-    // Attach comment form handler if present
+    // Listen for auth state changes
+    window.addEventListener('authStateChanged', updateAuthUI);
+
+    // Attach comment form handler
     const commentForm = document.getElementById('commentForm');
     if (commentForm) {
         commentForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            const nameEl = this.querySelector('input[type="text"]');
             const textEl = this.querySelector('textarea');
-            const name = nameEl ? nameEl.value.trim() : '';
             const comment = textEl ? textEl.value.trim() : '';
 
-            if (!name || !comment) {
-                alert('Please enter your name and comment.');
+            if (!comment) {
+                alert('Please enter your comment.');
                 return;
             }
 
@@ -85,18 +140,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (submitBtn) submitBtn.disabled = true;
 
             try {
-                const result = await addComment(productId, name, comment);
-                if (result && result.success) {
-                    await loadComments();
-                    this.reset();
-                } else {
-                    alert('There was an error posting your comment. Please try again.');
-                }
+                await saveComment(productId, comment);
+                await loadComments();
+                this.reset();
+                alert('Comment posted successfully!');
             } catch (error) {
                 console.error('Error posting comment:', error);
-                alert('There was an error posting your comment. Please try again.');
+                alert(error.message || 'Error posting comment. Please try again.');
             } finally {
                 if (submitBtn) submitBtn.disabled = false;
+            }
+        });
+    }
+
+    // Wire buy button
+    const buyBtn = document.querySelector('.btn-buy');
+    if (buyBtn) {
+        buyBtn.addEventListener('click', async () => {
+            try {
+                const check = await canPerformAction('purchase');
+                if (!check.allowed) {
+                    if (check.requiresVerification) {
+                        await handleVerificationPrompt();
+                    } else {
+                        alert(check.reason);
+                    }
+                    return;
+                }
+
+                // Get product price from button's data attribute or page
+                const priceEl = document.querySelector('.pricing-box .text-primary');
+                const price = priceEl ? parseFloat(priceEl.textContent.replace(/[^0-9.]/g, '')) : 0;
+
+                await handlePurchase(productId);
+                
+                // Save purchase record after successful payment
+                await savePurchase(productId, price * 100, {
+                    status: 'completed',
+                    method: 'card'
+                });
+
+            } catch (error) {
+                console.error('Error processing purchase:', error);
+                alert(error.message || 'Error processing purchase. Please try again.');
             }
         });
     }
@@ -104,15 +190,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load existing comments
     await loadComments();
 
-    // Wire buy button on product detail page
-    const buyBtn = document.querySelector('.btn-buy');
-    if (buyBtn) {
-        buyBtn.addEventListener('click', () => {
-            try {
-                handlePurchase(productId);
-            } catch (err) {
-                console.error('Error triggering purchase handler', err);
-            }
-        });
-    }
+    // Initial UI update
+    updateAuthUI();
 });

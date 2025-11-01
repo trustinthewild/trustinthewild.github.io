@@ -1,23 +1,6 @@
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-    apiKey: "AIzaSyBZIui4oK51FDw3nJ7J2R-tjyFWtnb_5L8",
-    authDomain: "trustinthewildfirebase.firebaseapp.com",
-    // IMPORTANT: Add your Realtime Database URL here
-    databaseURL: "https://trustinthewildfirebase-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "trustinthewildfirebase",
-    storageBucket: "trustinthewildfirebase.firebasestorage.app",
-    messagingSenderId: "694380204447",
-    appId: "1:694380204447:web:56c8d6ff7d59e9bdfaedaa",
-    measurementId: "G-VMF96GR9CV"
-};
-
-// Initialize Firebase
-// Pin Firebase SDK to a specific stable version
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
+import app from './firebase-init.js';
 import { getDatabase, ref, push, set, get, query, orderByChild } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
 
-const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // Add comment to Realtime Database

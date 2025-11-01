@@ -1,0 +1,9 @@
+1. Sign-up feature
+- seems working good
+- After click "Create Account", Firebase Authentication and Firebase realtime db are updated,
+but the account emailVerified = false. At this time user can not sign-in. => good
+- After click verification link => still the account emailVerified = false in Firebase realtime db.
+But user can sign-in at this time. After user sign-in, account emailVerified = true.
+
+- In the moment right after clicking "Create Account" button, the email address is displayed
+in the username-button?
