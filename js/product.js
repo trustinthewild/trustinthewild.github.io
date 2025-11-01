@@ -82,6 +82,8 @@ async function updateAuthUI() {
             commentForm.style.display = 'block';
             if (commentCheck.allowed) {
                 commentForm.querySelector('button[type="submit"]').disabled = false;
+                // Clear auth message when user can comment
+                if (authMessage) authMessage.innerHTML = '';
             } else {
                 commentForm.querySelector('button[type="submit"]').disabled = true;
                 if (authMessage && commentCheck.requiresVerification) {
@@ -108,11 +110,11 @@ async function updateAuthUI() {
             }
         }
     } else {
-        // Hide comment form and disable buy button for non-authenticated users
+        // Hide comment form and show sign-in message for non-authenticated users
         if (commentForm) commentForm.style.display = 'none';
         if (buyBtn) buyBtn.disabled = true;
         if (authMessage) {
-            authMessage.innerHTML = '<div class="alert alert-info">Please <a href="#" data-bs-toggle="modal" data-bs-target="#signInModal">sign in</a> to leave comments or make purchases.</div>';
+            authMessage.innerHTML = '<div class="alert alert-info">Please <a href="#" data-bs-toggle="modal" data-bs-target="#signInModal">sign in</a> to leave a comment.</div>';
         }
     }
 }
