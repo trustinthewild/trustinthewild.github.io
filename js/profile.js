@@ -176,11 +176,11 @@ async function loadUserComments(uid) {
         const commentsHtml = Object.entries(comments).map(([id, comment]) => `
             <div class="card mb-2">
                 <div class="card-body">
-                    <p class="card-text">${comment.text}</p>
+                    <p class="card-text">${comment.comment || ''}</p>
                     <p class="card-text">
                         <small class="text-muted">
                             Posted on ${new Date(comment.timestamp).toLocaleDateString()}
-                            for ${comment.productName}
+                            for ${comment.productName || 'Unknown Product'}
                         </small>
                     </p>
                 </div>
