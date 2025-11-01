@@ -1,4 +1,4 @@
-import { showNotification } from './auth.js';
+import { showNotification, getCurrentUser } from './auth.js';
 
 // Sample product data - Replace with your actual products
 const products = [
@@ -69,6 +69,17 @@ function loadProducts() {
     // Attach click handlers for buy buttons (delegated)
     document.querySelectorAll('.btn-buy').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            // Check if user is signed in first
+            const user = getCurrentUser();
+            if (!user) {
+                e.preventDefault();
+                showNotification('Sign In Required', 'Please sign in to purchase this product.', 'info');
+                // Optionally open the sign-in modal
+                const signInModal = new bootstrap.Modal(document.getElementById('signInModal'));
+                signInModal.show();
+                return;
+            }
+
             const pid = e.currentTarget.dataset.productId;
             if (pid) {
                 handlePurchase(pid);

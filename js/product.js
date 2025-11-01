@@ -112,7 +112,8 @@ async function updateAuthUI() {
     } else {
         // Hide comment form and show sign-in message for non-authenticated users
         if (commentForm) commentForm.style.display = 'none';
-        if (buyBtn) buyBtn.disabled = true;
+        // Keep buy button enabled so click handler can show sign-in modal
+        if (buyBtn) buyBtn.disabled = false;
         if (authMessage) {
             authMessage.innerHTML = '<div class="alert alert-info">Please <a href="#" data-bs-toggle="modal" data-bs-target="#signInModal">sign in</a> to leave a comment.</div>';
         }
@@ -158,7 +159,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Wire buy button
     const buyBtn = document.querySelector('.btn-buy');
     if (buyBtn) {
-        buyBtn.addEventListener('click', async () => {
+        buyBtn.addEventListener('click', async (e) => {
+            // Check if user is signed in first
+            const user = getCurrentUser();
+            if (!user) {
+                e.preventDefault();
+                showNotification('Sign In Required', 'Please sign in to purchase this product.', 'info');
+                // Optionally open the sign-in modal
+                const signInModal = new bootstrap.Modal(document.getElementById('signInModal'));
+                signInModal.show();
+                return;
+            }
+
             try {
                 const check = await canPerformAction('purchase');
                 if (!check.allowed) {
