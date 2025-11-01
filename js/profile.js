@@ -12,6 +12,14 @@ const auth = getAuth();
 const db = getDatabase();
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Listen for sign-out events and redirect immediately
+    window.addEventListener('authStateChanged', (e) => {
+        if (!e.detail.user) {
+            // User signed out, redirect to home
+            window.location.href = '/';
+        }
+    });
+
     try {
         // Wait for authentication state to be determined
         let user = getCurrentUser();
